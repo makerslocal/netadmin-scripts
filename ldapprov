@@ -1,0 +1,59 @@
+#!/bin/bash
+
+if [ $UID -ne 0 ]; then
+	echo "Hey! You have to be root to do this. (Try 'sudo !!')"
+	exit 1
+fi
+
+echo "Okay, we'll provision a new inetOrgPerson."
+echo -n "(Username)          uid: "; read LDAPUID #You can't use $UID in a bash script.
+echo -n "(First name)  givenName: "; read GIVENNAME
+echo -n "(Last name)          sn: "; read SN
+echo -n "(Phone) telephoneNumber: "; read TELEPHONENUMBER
+echo -n "(Email address)    mail: "; read MAIL
+echo    "------------------------"
+echo -n "     LDAP root password: "; read -s ADMINPASS
+
+echo ""
+
+echo -n "Provisioning LDAP user, "
+echo "dn: uid=$LDAPUID,ou=people,dc=makerslocal,dc=org
+sn: $SN
+telephoneNumber: $TELEPHONENUMBER
+uid: $LDAPUID
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: Maker
+mail: $MAIL
+cn: $GIVENNAME $SN
+givenName: $GIVENNAME
+displayName: $GIVENNAME $SN" | ldapadd -D "cn=admin,dc=makerslocal,dc=org" -w $ADMINPASS -xH ldap://newldap
+if [ $? -ne 0 ]; then echo "Well, that didn't work."; exit; fi
+
+echo "and setting the password... "
+PASS=$(ldappasswd -xH ldap://newldap -D "cn=admin,dc=makerslocal,dc=org" -w $ADMINPASS uid=$LDAPUID,ou=People,dc=makerslocal,dc=org | awk -F ' ' '{print $3}')
+if [ $? -ne 0 ]; then echo "Well, that didn't work."; exit; fi
+
+echo -n "and, now, emailing the user their password... "
+wget --no-check-certificate "https://256.makerslocal.org/wiki/index.php?title=New_Member_Welcome_Email&action=raw" -q -O - | sed "1,/^==Template/d;s/\$username/$LDAPUID/g;s/\$firstname/$GIVENNAME/g;s/\$lastname/$SN/g;s/\$email/$MAIL/g;s/\$pass/$PASS/g" | sendmail -t
+if [ $? -ne 0 ]; then echo "Well, that didn't work. You need to send the maker a welcome message manually. Their password is $PASS."; fi
+
+echo -n "cool. Emailing the board... "
+echo "To: board@lists.makerslocal.org
+From: root@makerslocal.org
+Subject: Welcome $LDAPUID to Makers Local 256
+
+$GIVENNAME $SN is now a Maker!
+" | sendmail -t
+if [ $? -ne 0 ]; then echo "Well, that didn't work. oh well."; fi
+
+echo -n "done! $LDAPUID is now a thing. Adding $MAIL to makers@lists.makerslocal.org... "
+echo "$MAIL" | ssh mail /var/lib/mailman/bin/add_members -r - makers
+if [ $? -ne 0 ]; then echo "failed! You need to add them manually."; fi
+
+echo -n "done, and to general@lists.makerslocal.org... "
+echo "$MAIL" | ssh mail /var/lib/mailman/bin/add_members -r - general
+if [ $? -ne 0 ]; then echo "failed! You need to add them manually."; fi
+
+echo "aaaaaand done. We did the thing!"
+

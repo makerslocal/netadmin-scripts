@@ -1,0 +1,41 @@
+#!/bin/bash
+
+if [ $UID -ne 0 ]; then
+	echo "Hey! You have to be root to do this. (Try 'sudo !!')"
+	exit 1
+fi
+
+echo "You are about to remove a user!!! Be careful."
+echo -n "(Username) uid to remove: "; read LDAPUID #You can't use $UID in a bash script.
+echo    "-------------------------"
+echo -n "      LDAP root password: "; read -s ADMINPASS
+
+echo ""
+echo "This is your LAST CHANCE!!! When you hit return,"
+echo "I will DESTROY the LDAP record for $LDAPUID forever!"
+echo "You can hit Ctrl+C to bail out, or return to continue."
+read ASDFGHJKL
+
+echo -n "Well, alright. Querying for the user... "
+MAIL=$(ldapsearch -D "cn=admin,dc=makerslocal,dc=org" -w $ADMINPASS -xH ldap://newldap uid=$LDAPUID -b "ou=people,dc=makerslocal,dc=org" | grep '^mail\: ' | head -n 1 | awk -F ' ' '{print $2}')
+if [ -z $MAIL ]; then echo "Well, that didn't work. Does the user $LDAPUID really exist?"; exit; fi
+
+echo -n "okay, removing LDAP record... "
+ldapdelete -D "cn=admin,dc=makerslocal,dc=org" -w $ADMINPASS -xH ldap://newldap "uid=$LDAPUID,ou=people,dc=makerslocal,dc=org"
+if [ $? -ne 0 ]; then echo "Well, that didn't work."; exit; fi
+
+echo -n "done! $LDAPUID is no longer a thing. Removing $MAIL from makers@lists.makerslocal.org... "
+echo "$MAIL" | ssh mail /var/lib/mailman/bin/remove_members -f - makers
+if [ $? -ne 0 ]; then echo "failed! You need to remove them manually."; fi
+
+echo -n "cool. Emailing the board... "
+echo "To: board@lists.makerslocal.org
+From: root@makerslocal.org
+Subject: Sayonara, $LDAPUID
+
+$LDAPUID is no longer a Maker. RIP
+" | sendmail -t
+if [ $? -ne 0 ]; then echo "Well, that didn't work. oh well."; fi
+
+echo "aaaaaand done. RIP $LDAPUID"
+
