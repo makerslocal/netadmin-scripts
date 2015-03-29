@@ -12,7 +12,9 @@ echo -n "(Last name)          sn: "; read SN
 echo -n "(Phone) telephoneNumber: "; read TELEPHONENUMBER
 echo -n "(Email address)    mail: "; read MAIL
 echo    "------------------------"
-echo -n "     LDAP root password: "; read -s ADMINPASS
+#echo -n "     LDAP root password: "; read -s ADMINPASS
+ADMINPASS=$(grep 'olcRootPW' /etc/ldap/slapd.d/cn\=config/olcDatabase\=\{0\}config.ldif | cut -d ' ' -f 2)
+echo -n "Okay, we will provision $GIVENNAME $SN with the username $LDAPUID; they have the phone number $TELEPHONENUMBER and email $MAIL. If that's right, hit return. Hit Ctrl+C to bail."; read BLAH
 
 echo ""
 

@@ -8,7 +8,8 @@ fi
 echo "You are about to remove a user!!! Be careful."
 echo -n "(Username) uid to remove: "; read LDAPUID #You can't use $UID in a bash script.
 echo    "-------------------------"
-echo -n "      LDAP root password: "; read -s ADMINPASS
+#echo -n "      LDAP root password: "; read -s ADMINPASS
+ADMINPASS=$(grep 'olcRootPW' /etc/ldap/slapd.d/cn\=config/olcDatabase\=\{0\}config.ldif | cut -d ' ' -f 2)
 
 echo ""
 echo "This is your LAST CHANCE!!! When you hit return,"
