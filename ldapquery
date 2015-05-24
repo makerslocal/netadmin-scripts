@@ -1,0 +1,3 @@
+#!/bin/bash
+
+ldapsearch -xH ldap://newldap.256.makerslocal.org/ -b ou=people,dc=makerslocal,dc=org $1
