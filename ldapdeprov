@@ -31,6 +31,7 @@ if [ $? -ne 0 ]; then echo "failed! You need to remove them manually."; fi
 
 echo -n "cool. Emailing the board... "
 echo "To: board@lists.makerslocal.org
+Cc: root@makerslocal.org
 From: root@makerslocal.org
 Subject: Sayonara, $LDAPUID
 

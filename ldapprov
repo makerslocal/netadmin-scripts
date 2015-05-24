@@ -42,6 +42,7 @@ if [ $? -ne 0 ]; then echo "Well, that didn't work. You need to send the maker a
 
 echo -n "cool. Emailing the board... "
 echo "To: board@lists.makerslocal.org
+Cc: root@makerslocal.org
 From: root@makerslocal.org
 Subject: Welcome $LDAPUID to Makers Local 256
 
