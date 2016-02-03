@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+set -o nounset
+set -o errexit
+
+if [ "$(id -u)" != "0" ]; then
+	echo "You aren't root..." >&2
+	exit 2
+fi
+
+if [ $# -lt 1 ]; then
+	echo "usage: $0 DESTINATION-HOST" >&2
+	exit 1
+fi
+
+VMS=$(xl list | tail -n +3 | awk '{print $1}' | xargs | sed 's/ /,/g')
+echo "Starting migration of $VMS to $1."
+$(echo $0 | sed 's/-all//') $VMS $1
+
