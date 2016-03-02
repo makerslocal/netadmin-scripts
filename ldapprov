@@ -47,6 +47,7 @@ From: root@makerslocal.org
 Subject: Welcome $LDAPUID to Makers Local 256
 
 $GIVENNAME $SN is now a Maker!
+Please direct any questions about this user's account to $(logname).
 " | sendmail -t
 if [ $? -ne 0 ]; then echo "Well, that didn't work. oh well."; fi
 

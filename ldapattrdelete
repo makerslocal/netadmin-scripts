@@ -6,9 +6,9 @@ if [ $UID -ne 0 ]; then
 fi
 
 echo "Okay, we'll delete an attribute from a user."
-echo -n " (Username)          uid: "; read LDAPUID #You can't use $UID in a bash script.
-echo -n "          Attribute name: "; read ATTRIBUTE
-echo -n "Value for that attribute: "; read VALUE
+echo -n " (Username)                  uid: "; read LDAPUID #You can't use $UID in a bash script.
+echo -n "                  Attribute name: "; read ATTRIBUTE
+echo -n "Current value for that attribute: "; read VALUE
 ADMINPASS=$(grep 'olcRootPW' /etc/ldap/slapd.d/cn\=config/olcDatabase\=\{0\}config.ldif | cut -d ' ' -f 2)
 echo -n "Okay, we will remove $ATTRIBUTE: $VALUE from the user $LDAPUID. If that's right, hit return. Hit Ctrl+C to bail."; read BLAH
 
