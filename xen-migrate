@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+set -o nounset
+set -o errexit
+
+if [ "$(id -u)" != "0" ]; then
+	echo "You aren't root..." >&2
+	exit 2
+fi
+
+#if [ -z "$1" ] || [ -z "$2" ]; then
+if [ $# -lt 2 ]; then
+	echo "usage: $0 LIST,OF,DOMS,... DESTINATION-HOST" >&2
+	exit 1
+fi
+
+eval $(ssh-agent -s)
+ssh-add
+
+for VM in $(echo "$1" | sed 's/,/ /g'); do
+	echo "Going to migrate $VM"
+	DISKS="$(grep "'phy:/dev/drbd_" "/etc/xen/$VM.cfg" | sed -e 's/^.*phy://' -e 's/,.*//' -e 's/.*drbd_//')"
+	for DISK in $DISKS; do
+		echo -n " Is $DISK in sync? "
+		(drbd-overview | grep "$DISK.*UpToDate/UpToDate" > /dev/null) || (echo "No, and I won't migrate that VM until it is." >&2; exit 3)
+		echo -n "Yes. Is it primary here? "
+		(drbd-overview | grep "$DISK.*Connected.*Primary/" > /dev/null) || (echo "No. How would you migrate a VM without its disks being here?" >&2; exit 4)
+		echo "Yes."
+
+		echo " Making $DISK primary on $2"
+		(ssh $2 drbdadm primary $DISK) || (echo "Well, that failed..." >&2; exit 5)
+	done
+	echo "Doing actual migration. Hold onto your butts."
+	(xl migrate $VM $2) || (echo "I'm so sorry." >&2; exit 6)
+	for DISK in $DISKS; do
+		echo " Making $DISK secondary here."
+		(drbdadm secondary $DISK) || (echo "Well, that failed..." >&2; exit 7)
+	done
+	echo "DONE with $VM."
+done
+
+if !(kill $SSH_AGENT_PID); then echo "Couldn't kill ssh-agent $SSH_AGENT_PID. I wouldn't worry about it though." >&2; fi
+

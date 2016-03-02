@@ -36,8 +36,11 @@ echo "and setting the password... "
 PASS=$(ldappasswd -xH ldap://newldap -D "cn=admin,dc=makerslocal,dc=org" -w $ADMINPASS uid=$LDAPUID,ou=People,dc=makerslocal,dc=org | awk -F ' ' '{print $3}')
 if [ $? -ne 0 ]; then echo "Well, that didn't work."; exit; fi
 
+# Strip raw /'s from password to throw headlong into sed
+PASSMOD=$(echo "$PASS" | sed "s,\/,\\\/,g");
+
 echo -n "and, now, emailing the user their password... "
-wget --no-check-certificate "https://256.makerslocal.org/wiki/index.php?title=New_Member_Welcome_Email&action=raw" -q -O - | sed "1,/^==Template/d;s/\$username/$LDAPUID/g;s/\$firstname/$GIVENNAME/g;s/\$lastname/$SN/g;s/\$email/$MAIL/g;s/\$pass/$PASS/g" | sendmail -t
+wget --no-check-certificate "https://256.makerslocal.org/wiki/index.php?title=New_Member_Welcome_Email&action=raw" -q -O - | sed "1,/^==Template/d;s/\$username/$LDAPUID/g;s/\$firstname/$GIVENNAME/g;s/\$lastname/$SN/g;s/\$email/$MAIL/g;s/\$pass/$PASSMOD/g" | sendmail -t
 if [ $? -ne 0 ]; then echo "Well, that didn't work. You need to send the maker a welcome message manually. Their password is $PASS."; fi
 
 echo -n "cool. Emailing the board... "
