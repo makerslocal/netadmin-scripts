@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -o nounset
+set -o errexit
+
+function debug {
+	#echo $1
+	true
+}
+
+debug "Starting backup of $HOSTNAME"
+
+#what dirs do you want to be backed up?
+BACKUP_DIRS="/etc /root/ /var/backups/ /var/log/ /var/www /var/www.orig/"
+
+#to set up: "cat > /usr/local/etc/borgpass && sudo chmod 600 /usr/local/etc/borgpass" - paste password and hit return then Ctrl+D
+BORG_PASSPHRASE="$(cat /usr/local/etc/borgpass)"
+export BACKUP_DIRS BORG_PASSPHRASE
+
+debug "Starting actual backup"
+borg create -C zlib "borg@newbackup.256.makerslocal.org:.::rootfs-$(date +%s)" $BACKUP_DIRS
+
+debug "Backup of $HOSTNAME complete"
