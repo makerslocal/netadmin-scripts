@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+set -o nounset
+set -o errexit
+
+if [ "$(id -u)" != "0" ]; then
+	echo "You aren't root..." >&2
+	exit 2
+fi
+
+#if [ -z "$1" ]; then
+if [ $# -lt 1 ]; then
+	echo "usage: $0 LIST,OF,DOMS,..." >&2
+	exit 1
+fi
+
+for VM in $(echo "$1" | sed 's/,/ /g'); do
+	echo "Going to start $VM"
+	DISKS="$(grep "'phy:/dev/drbd_" "/etc/xen/$VM.cfg" | sed -e 's/^.*phy://' -e 's/,.*//' -e 's/.*drbd_//')"
+	for DISK in $DISKS; do
+		echo -n " Is $DISK in sync? "
+		(drbd-overview | grep "$DISK.*UpToDate/UpToDate" > /dev/null) || (echo "No, and I won't start that VM until it is." >&2; exit 3)
+		echo -n "Yes. Is it primary somewhere else? "
+		(drbd-overview | grep "$DISK.*Connected.*/Primary" > /dev/null) && (echo "Yes. How would you start a VM if it's primary somewhere else?" >&2; exit 4)
+		echo "No."
+
+		echo " Making $DISK primary here"
+		(drbdadm primary $DISK) || (echo "Well, that failed..." >&2; exit 5)
+	done
+	echo "Creating $VM."
+	(xl create /etc/xen/$VM.cfg) || (echo "I'm so sorry." >&2; exit 6)
+	echo "DONE with $VM."
+done
+
