@@ -20,8 +20,8 @@ for VM in $(echo "$1" | sed 's/,/ /g'); do
 	for DISK in $DISKS; do
 		echo -n " Is $DISK in sync? "
 		(drbd-overview | grep "$DISK.*UpToDate/UpToDate" > /dev/null) || (echo "No, and I won't start that VM until it is." >&2; exit 3)
-		echo -n "Yes. Is it primary somewhere else? "
-		(drbd-overview | grep "$DISK.*Connected.*/Primary" > /dev/null) && (echo "Yes. How would you start a VM if it's primary somewhere else?" >&2; exit 4)
+		echo -n "Yes. Is it primary somewhere? "
+		(drbd-overview | grep "$DISK.*Primary" > /dev/null) && (echo "Yes. Are you sure it isn't already running?" >&2; exit 4)
 		echo "No."
 
 		echo " Making $DISK primary here"
