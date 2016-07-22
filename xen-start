@@ -10,7 +10,8 @@ fi
 
 #if [ -z "$1" ]; then
 if [ $# -lt 1 ]; then
-	echo "usage: $0 LIST,OF,DOMS,..." >&2
+	echo "usage: $0 LIST,OF,DOMS,... [--force]" >&2
+	echo "	--force: Start the VM even if its disk isn't synced"
 	exit 1
 fi
 
@@ -19,8 +20,16 @@ for VM in $(echo "$1" | sed 's/,/ /g'); do
 	DISKS="$(grep "'phy:/dev/drbd_" "/etc/xen/$VM.cfg" | sed -e 's/^.*phy://' -e 's/,.*//' -e 's/.*drbd_//')"
 	for DISK in $DISKS; do
 		echo -n " Is $DISK in sync? "
-		(drbd-overview | grep "$DISK.*UpToDate/UpToDate" > /dev/null) || (echo "No, and I won't start that VM until it is." >&2; exit 3)
-		echo -n "Yes. Is it primary somewhere? "
+		if (drbd-overview | grep "$DISK.*UpToDate/UpToDate" > /dev/null); then
+			echo -n "Yes."
+		else
+			if [ $# -ge 2 ] && [ "$2" == "--force" ]; then
+				echo "No, but you told me to start it anyway."
+			else
+				echo "No, and I won't start that VM until it is." >&2; exit 3
+			fi
+		fi
+		echo -n " Is it primary somewhere? "
 		(drbd-overview | grep "$DISK.*Primary" > /dev/null) && (echo "Yes. Are you sure it isn't already running?" >&2; exit 4)
 		echo "No."
 
