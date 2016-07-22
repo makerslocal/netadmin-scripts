@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+set -o nounset
+set -o errexit
+
+if [ "$(id -u)" != "0" ]; then
+	echo "You aren't root..." >&2
+	exit 2
+fi
+
+MYVMS=$(xl list | tail -n +3 | awk '{print $1}' | xargs)
+MYRAM=$(xl info | grep ^total_memory | awk '{print $3}')
+MYUSEDRAM=$(sudo xl list | tail -n +3 | awk '{print $3}' | xargs | sed 's/ /+/g' | bc)
+
+echo -n $(hostname -f); echo " $(uptime | cut -d ' ' -f 3-)"
+echo "$(echo $MYVMS|wc -w) VMs running: $MYVMS"
+echo "$MYUSEDRAM/$MYRAM MB ($(echo "scale=2; ($MYUSEDRAM/$MYRAM)*100" | bc | cut -d '.' -f 1)%) of RAM used by VMs."
+
