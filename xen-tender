@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -o nounset
+set -o errexit
+
+if [ "$(id -u)" != "0" ]; then
+	echo "You aren't root..." >&2
+	exit 2
+fi
+
+if [ $# -lt 1 ]; then
+	echo "usage: $0 list,of,vms,that,should,be,running" >&2
+	exit 1
+fi
+
+VMS=$(drbd-overview | grep Primary | cut -d ':' -f 2 | cut -d '_' -f 1 | sort -u)
+
+echo "$1" | sed 's/,/\n/g' | while read -r LINE; do
+	if [ "$(echo "$VMS" | grep -cE "^$LINE$")" -ne "1" ]; then
+		echo "Need to start $LINE"
+		xen-start $LINE
+	fi
+done
