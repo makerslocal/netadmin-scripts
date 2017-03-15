@@ -13,11 +13,11 @@ if [ $# -lt 1 ]; then
 	exit 1
 fi
 
-VMS=$(drbd-overview | grep Primary | cut -d ':' -f 2 | cut -d '_' -f 1 | sort -u)
+VMS=$(/usr/sbin/drbd-overview | grep Primary | cut -d ':' -f 2 | cut -d '_' -f 1 | sort -u)
 
 echo "$1" | sed 's/,/\n/g' | while read -r LINE; do
 	if [ "$(echo "$VMS" | grep -cE "^$LINE$")" -ne "1" ]; then
 		echo "Need to start $LINE"
-		xen-start $LINE
+		/usr/local/sbin/xen-start $LINE
 	fi
 done
