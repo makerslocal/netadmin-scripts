@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+set -o nounset
+set -o errexit
+
+if [ "$(id -u)" != "0" ]; then
+	echo "You aren't root..." >&2
+	exit 2
+fi
+
+#if [ -z "$1" ]; then
+if [ $# -lt 1 ]; then
+	echo "usage: $0 LIST,OF,DOMS,..." >&2
+	exit 1
+fi
+
+for VM in $(echo "$1" | sed 's/,/ /g'); do
+	echo "Going to stop $VM"
+	(xl shutdown -w $VM) || (echo "I'm so sorry." >&2; exit 6)
+	
+	echo "Stopping disks."
+	DISKS="$(grep "'phy:/dev/drbd_" "/etc/xen/$VM.cfg" | sed -e 's/^.*phy://' -e 's/,.*//' -e 's/.*drbd_//')"
+	for DISK in $DISKS; do
+		echo " Making $DISK secondary here"
+		(drbdadm secondary $DISK) || (echo "Well, that failed..." >&2; exit 5)
+	done
+	echo "DONE with $VM."
+done
+
