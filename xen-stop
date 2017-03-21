@@ -17,6 +17,9 @@ fi
 for VM in $(echo "$1" | sed 's/,/ /g'); do
 	echo "Going to stop $VM"
 	(xl shutdown -w $VM) || (echo "I'm so sorry." >&2; exit 6)
+
+	echo "Waiting for disks to release"
+	sleep 3
 	
 	echo "Stopping disks."
 	DISKS="$(grep "'phy:/dev/drbd_" "/etc/xen/$VM.cfg" | sed -e 's/^.*phy://' -e 's/,.*//' -e 's/.*drbd_//')"
