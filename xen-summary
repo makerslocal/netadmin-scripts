@@ -15,5 +15,9 @@ MYUSEDRAM=$(sudo xl list | tail -n +3 | awk '{print $3}' | xargs | sed 's/ /+/g'
 
 echo -n $(hostname -f); echo " $(uptime | cut -d ' ' -f 3-)"
 echo "$MYVMCOUNT VM$(if [ "$MYVMCOUNT" -ne "1" ]; then echo "s"; fi) running: $(echo $MYVMS | sed 's/ /,/g')"
-echo "$MYUSEDRAM/$MYRAM MB ($(echo "scale=2; ($MYUSEDRAM/$MYRAM)*100" | bc | cut -d '.' -f 1)%) of RAM used by VMs."
+if [ "$MYVMCOUNT" -gt 0 ]; then
+	echo "$MYUSEDRAM/$MYRAM MB ($(echo "scale=2; ($MYUSEDRAM/$MYRAM)*100" | bc | cut -d '.' -f 1)%) of RAM used by VMs."
+else
+	echo "0/$MYRAM MB (0%) of RAM used by VMs."
+fi
 
