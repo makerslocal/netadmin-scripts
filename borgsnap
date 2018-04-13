@@ -11,7 +11,15 @@ function debug {
 debug "Starting backup of $HOSTNAME"
 
 #what dirs do you want to be backed up?
-BACKUP_DIRS="/etc /root/ /var/backups/ /var/log/ /var/www /var/www.orig/"
+source /usr/local/etc/borgsnap.conf || BACKUP_DIRS=""
+if [ -z "$BACKUP_DIRS" ]; then
+
+	echo "WARNING: There is no /usr/local/etc/borgsnap.conf - creating one with a default value..."
+	echo 'BACKUP_DIRS="/etc /root/ /var/backups/ /var/log/ /var/www"' | tee -a /usr/local/etc/borgsnap.conf
+	chown root: /usr/local/etc/borgsnap.conf
+	chmod 0600 /usr/local/etc/borgsnap.conf
+	source /usr/local/etc/borgsnap.conf
+fi
 
 #to set up: "cat > /usr/local/etc/borgpass && sudo chmod 600 /usr/local/etc/borgpass" - paste password and hit return then Ctrl+D
 BORG_PASSPHRASE="$(cat /usr/local/etc/borgpass)"
