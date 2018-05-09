@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+IPTEST="10.255.255.0"
+
+ping -qc 1 $IPTEST > /dev/null
+if [ $? -ne 0 ]; then
+	echo "Re-initializing IPSec..."
+	/usr/sbin/service ipsec restart && sleep 1
+	/usr/sbin/ipsec auto --up peer-199.124.61.7-tunnel-1
+	echo "done."
+	sleep 15
+	
+	echo "Re-initializing L2TP..."
+	/usr/sbin/service xl2tpd restart && sleep 1
+	echo "c vpn-connection" > /var/run/xl2tpd/l2tp-control
+	sleep 10
+	echo "done."
+	
+	echo -n "Adding route... "
+	ip route add 10.56.0.0/21 via 10.255.255.0
+	sleep 5
+	
+	echo -n "ping check "
+	ping -qc 1 $IPTEST > /dev/null
+	if [ $? -ne 0 ]; then
+		echo "failed! :("
+	else
+		echo "done."
+	fi
+
+	echo "---"
+	echo "IP setup:"
+	ip addr sh dev ppp0
+fi
+
