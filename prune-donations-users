@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+set -e
+
+log() {
+	echo "$1" >&2
+}
+
+log "Loading database login"
+LOGIN="$(cat /var/www/256/donations/config/database.php | grep -m1 login | cut -d "'" -f 4)"
+log "Loading database password"
+PASS="$(cat /var/www/256/donations/config/database.php | grep -m1 password | cut -d "'" -f 4)"
+
+log "Retrieving donations system users"
+echo 'select username from users;' |  mysql -u$LOGIN -p"$PASS" donations > /tmp/donations-system-users
+
+log "Retrieving ldap users"
+/usr/local/sbin/ldapquery objectClass=Maker | grep -E '^uid' | cut -d ' ' -f 2- | grep -vif /tmp/donations-system-users
