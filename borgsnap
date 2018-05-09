@@ -4,7 +4,7 @@ set -o nounset
 set -o errexit
 
 function debug {
-	#echo $1
+	echo $1
 	true
 }
 
@@ -15,7 +15,7 @@ source /usr/local/etc/borgsnap.conf || BACKUP_DIRS=""
 if [ -z "$BACKUP_DIRS" ]; then
 
 	echo "WARNING: There is no /usr/local/etc/borgsnap.conf - creating one with a default value..."
-	echo 'BACKUP_DIRS="/etc /root/ /var/backups/ /var/log/ /var/www"' | tee -a /usr/local/etc/borgsnap.conf
+	echo 'BACKUP_DIRS="/etc /root/ /var/backups/ /var/log/ /var/www /home"' | tee -a /usr/local/etc/borgsnap.conf
 	chown root: /usr/local/etc/borgsnap.conf
 	chmod 0600 /usr/local/etc/borgsnap.conf
 	source /usr/local/etc/borgsnap.conf
@@ -27,6 +27,6 @@ BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
 export BACKUP_DIRS BORG_PASSPHRASE BORG_RELOCATED_REPO_ACCESS_IS_OK
 
 debug "Starting actual backup"
-borg create -C zlib "borg@newbackup.256.makerslocal.org:.::rootfs-$(date +%s)" $BACKUP_DIRS
+borg create -C zlib "ssh://borg@shop.makerslocal.org:22222//srv/backup/borg/repos/remote::rootfs-$(date +%s)" $BACKUP_DIRS
 
 debug "Backup of $HOSTNAME complete"
