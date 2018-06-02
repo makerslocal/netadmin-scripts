@@ -27,6 +27,6 @@ BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
 export BACKUP_DIRS BORG_PASSPHRASE BORG_RELOCATED_REPO_ACCESS_IS_OK
 
 debug "Starting actual backup"
-borg create -C zlib "ssh://borg@shop.makerslocal.org:22222//srv/backup/borg/repos/remote::rootfs-$(date +%s)" $BACKUP_DIRS
+borg create -C zlib "ssh://borg@shop.makerslocal.org:22222//srv/backup/borg/repos/$HOSTNAME::rootfs-$(date +%s)" $BACKUP_DIRS
 
 debug "Backup of $HOSTNAME complete"
